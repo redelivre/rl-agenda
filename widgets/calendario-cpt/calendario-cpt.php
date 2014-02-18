@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Rede Livre Calendário CPT
- * Description: Modificação do código da função get_calendar do WordPress para suportar 
+ * Description: Modificação do código da função get_calendar do WordPress para suportar qualquer custom post type
  * Version: 0.1
  * Author: João Paulo Apolinário Passos (contribuição de IV Draganov e Pippin Williamson)
  * Author URI: http://apolinariopassos.com.br/dev
