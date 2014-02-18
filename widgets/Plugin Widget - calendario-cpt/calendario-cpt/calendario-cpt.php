@@ -23,7 +23,7 @@ class rl_cpt_calendar extends WP_Widget {
     function widget($args, $instance) {	
         extract( $args );
         $title 			= apply_filters('widget_title', $instance['title']);
-		$posttype_enabled = $instance['posttype_enabled'];
+		    $posttype_enabled = $instance['posttype_enabled'];
         $posttype 		= $instance['posttype'];
         ?>
 			<?php echo $before_widget; ?>
@@ -55,10 +55,10 @@ class rl_cpt_calendar extends WP_Widget {
 
     /** @see WP_Widget::update */
     function update($new_instance, $old_instance) {		
-		$instance = $old_instance;
-		$instance['title'] = strip_tags($new_instance['title']);
-		$instance['posttype_enabled'] = $new_instance['posttype_enabled'];
-		$instance['posttype'] = $new_instance['posttype'];
+		  $instance = $old_instance;
+		  $instance['title'] = strip_tags($new_instance['title']);
+		  $instance['posttype_enabled'] = $new_instance['posttype_enabled'];
+		  $instance['posttype'] = $new_instance['posttype'];
         return $instance;
     }
 
@@ -66,11 +66,21 @@ class rl_cpt_calendar extends WP_Widget {
     function form($instance) {	
 
 		$posttypes = get_post_types('', 'objects');
-	
-        $title = esc_attr($instance['title']);
-		$posttype_enabled	= esc_attr($instance['posttype_enabled']);
-		$posttype	= esc_attr($instance['posttype']);
-        ?>
+	  
+    if(isset($instance['title']))
+      $title = esc_attr($instance['title']);
+    else
+      $title = '';
+
+		if(isset($instance['posttype_enabled']))
+      $posttype_enabled	= esc_attr($instance['posttype_enabled']);
+    else 
+      $posttype_enabled = 0;
+
+		if(isset($instance['posttype']))
+      $posttype	= esc_attr($instance['posttype']);
+    
+    ?>
         <p>
           <label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Titulo:'); ?></label> 
           <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo $title; ?>" />
