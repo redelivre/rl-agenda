@@ -1,156 +1,15 @@
-<?php
-/**
- * Plugin Name: Rede Livre Calendário CPT
- * Description: Modificação do código da função get_calendar do WordPress para suportar 
- * Version: 0.1
- * Author: João Paulo Apolinário Passos (contribuição de IV Draganov e Pippin Williamson)
- * Author URI: http://apolinariopassos.com.br/dev
- * License: MIT
- */
-
-/**
- * CPT Calendar Widget Class
- */
-class rl_cpt_calendar extends WP_Widget {
-
-
-    /** constructor */
-    function rl_cpt_calendar() {
-        parent::WP_Widget(false, $name = 'Calendario Custom Post Types');	
-    }
-
-    /** @see WP_Widget::widget */
-    function widget($args, $instance) {	
-        extract( $args );
-        $title 			= apply_filters('widget_title', $instance['title']);
-		    $posttype_enabled = $instance['posttype_enabled'];
-        $posttype 		= $instance['posttype'];
-        ?>
-			<?php echo $before_widget; ?>
-				<?php if ( $title )
-					echo $before_title . $title . $after_title; ?>
-					<div class="widget_calendar">
-						<div id="calendar_wrap">
-							<?php if($posttype_enabled == true) {
-								ucc_get_calendar(array($posttype));
-
-                function namespace_add_custom_types( $query ) {
-                  if( is_category() || is_tag() && empty( $query->query_vars['suppress_filters'] ) ) {
-                    $query->set( 'post_type', array(
-                      'post', $posttype
-                    ));
-                    return $query;
-                  }
-                }
-                add_filter( 'pre_get_posts', 'namespace_add_custom_types' );
-                
-                } else {
-								ucc_get_calendar();
-							} ?>
-						</div>
-					</div>
-			<?php echo $after_widget; ?>
-        <?php
-    }
-
-    /** @see WP_Widget::update */
-    function update($new_instance, $old_instance) {		
-		  $instance = $old_instance;
-		  $instance['title'] = strip_tags($new_instance['title']);
-		  $instance['posttype_enabled'] = $new_instance['posttype_enabled'];
-		  $instance['posttype'] = $new_instance['posttype'];
-        return $instance;
-    }
-
-    /** @see WP_Widget::form */
-    function form($instance) {	
-
-		$posttypes = get_post_types('', 'objects');
-	  
-    if(isset($instance['title']))
-      $title = esc_attr($instance['title']);
-    else
-      $title = '';
-
-		if(isset($instance['posttype_enabled']))
-      $posttype_enabled	= esc_attr($instance['posttype_enabled']);
-    else 
-      $posttype_enabled = 0;
-
-		if(isset($instance['posttype']))
-      $posttype	= esc_attr($instance['posttype']);
-    
-    ?>
-        <p>
-          <label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Titulo:'); ?></label> 
-          <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo $title; ?>" />
-        </p>
-		<p>
-          <input id="<?php echo $this->get_field_id('posttype_enabled'); ?>" name="<?php echo $this->get_field_name('posttype_enabled'); ?>" type="checkbox" value="1" <?php checked( '1', $posttype_enabled ); ?>/>
-          <label for="<?php echo $this->get_field_id('posttype_enabled'); ?>"><?php _e('Mostrar apenas um post type?'); ?></label> 
-        </p>
-		<p>	
-			<label for="<?php echo $this->get_field_id('posttype'); ?>"><?php _e('Escolha o Post Type para mostrar'); ?></label> 
-			<select name="<?php echo $this->get_field_name('posttype'); ?>" id="<?php echo $this->get_field_id('posttype'); ?>" class="widefat">
-				<?php
-				foreach ($posttypes as $option) {
-					echo '<option value="' . $option->name . '" id="' . $option->name . '"', $posttype == $option->name ? ' selected="selected"' : '', '>', $option->name, '</option>';
-				}
-				?>
-			</select>		
-		</p>
-        <?php 
-    }
-
-
-} // 
-// register CPT Calendar widget
-add_action('widgets_init', create_function('', 'return register_widget("rl_cpt_calendar");'));
-
-
-
-/* ucc_get_calendar() :: Extends get_calendar() by including custom post types.
- * Derived from get_calendar() code in /wp-includes/general-template.php.
- */
-
-add_action( 'init', 'create_post_type' );
-function create_post_type() {
-  register_post_type( 'acme_product',
-    array(
-      'labels' => array(
-        'name' => __( 'Products' ),
-        'singular_name' => __( 'Product' )
-      ),
-    'public' => true,
-    'has_archive' => true,
-    )
-  );
-}
-
-function ajax_calendar_handler() {
-  wp_enqueue_script(
-    'ajax-calendar-handler',
-    plugins_url() . '/calendario-cpt/js/ajax-calendar.js',
-    array( 'jquery' )
-  );
-  $template_url = array( 'plugin_url' => plugins_url() . '/calendario-cpt' );
-  wp_localize_script( 'ajax-calendar-handler', 'dados', $template_url );
-}
-add_action( 'wp_enqueue_scripts', 'ajax_calendar_handler' );
-
-function ucc_get_calendar( $post_types = '' , $initial = true , $echo = true ) {
-  global $wpdb, $m, $monthnum, $year, $wp_locale, $posts;
-  if ( empty( $post_types ) || !is_array( $post_types ) ) {
-    $args = array(
-      'public' => true ,
-      '_builtin' => false
-    );
-    $output = 'names';
-    $operator = 'and';
-
-    $post_types = get_post_types( $args , $output , $operator );
-    $post_types = array_merge( $post_types , array( 'post' ) );
-  } else {
+<?php 
+define('WP_USE_THEMES', false);  
+require_once('../../../wp-load.php');
+ global $wpdb, $m, $wp_locale, $posts;
+ 	$monthnum = $_GET['monthnum'];
+	$year = $_GET['year'];
+	$post_types = $_GET['post_type'];
+	$initial = true; 
+	$echo = true; 
+	$post_types = str_replace("\'","",$post_types);
+	$post_types = explode(",", $post_types);
+	$post_types = array_map('trim', $post_types);
     /* Trust but verify. */
     $my_post_types = array();
     foreach ( $post_types as $post_type ) {
@@ -158,42 +17,10 @@ function ucc_get_calendar( $post_types = '' , $initial = true , $echo = true ) {
         $my_post_types[] = $post_type;
     }
     $post_types = $my_post_types;
-  }
+  
   $post_types_key = implode( '' , $post_types );
   $post_types = "'" . implode( "' , '" , $post_types ) . "'";
-
-  $cache = array();
-  $key = md5( $m . $monthnum . $year . $post_types_key );
-  if ( $cache = wp_cache_get( 'get_calendar' , 'calendar' ) ) {
-    if ( is_array( $cache ) && isset( $cache[$key] ) ) {
-      remove_filter( 'get_calendar' , 'ucc_get_calendar_filter' );
-      $output = apply_filters( 'get_calendar',  $cache[$key] );
-      add_filter( 'get_calendar' , 'ucc_get_calendar_filter' );
-      if ( $echo ) {
-        echo $output;
-        return;
-      } else {
-        return $output;
-      }
-    }
-  }
-
-  if ( !is_array( $cache ) )
-    $cache = array();
-
-  // Quick check. If we have no posts at all, abort!
-  if ( !$posts ) {
-    $sql = "SELECT 1 as test FROM $wpdb->posts WHERE post_type IN ( $post_types ) AND post_status IN ('publish','future') LIMIT 1";
-    $gotsome = $wpdb->get_var( $sql );
-    if ( !$gotsome ) {
-      $cache[$key] = '';
-      wp_cache_set( 'get_calendar' , $cache , 'calendar' );
-      return;
-    }
-  }
-
-  if ( isset( $_GET['w'] ) )
-    $w = '' . intval( $_GET['w'] );
+  
 
   // week_begins = 0 stands for Sunday
   $week_begins = intval( get_option( 'start_of_week' ) );
@@ -352,29 +179,6 @@ function ucc_get_calendar( $post_types = '' , $initial = true , $echo = true ) {
     $calendar_output .= "\n\t\t" . '<td class="pad" colspan="' . esc_attr( $pad ) . '">&nbsp;</td>';
 
   $calendar_output .= "\n\t</tr>\n\t</tbody>\n\t</table>";
+  echo $calendar_output;
 
-  $cache[$key] = $calendar_output;
-  wp_cache_set( 'get_calendar' , $cache, 'calendar' );
-
-  remove_filter( 'get_calendar' , 'ucc_get_calendar_filter' );
-  $output = apply_filters( 'get_calendar',  $calendar_output );
-  add_filter( 'get_calendar' , 'ucc_get_calendar_filter' );
-
-  if ( $echo )
-    echo $output;
-  else
-    return $output;
-}
-
-function archive_meta_query( $query ) {
-    if ( $query->is_archive){
-      $query->query_vars["post_status"] = array('publish', 'future');
-    }
-}
-add_action( 'pre_get_posts', 'archive_meta_query', 1 );
-
-function ucc_get_calendar_filter( $content ) {
-  $output = ucc_get_calendar( '' , '' , false );
-  return $output;
-}
-add_filter( 'get_calendar' , 'ucc_get_calendar_filter' , 10 , 2 );
+?>
