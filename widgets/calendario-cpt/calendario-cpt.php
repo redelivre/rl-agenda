@@ -16,7 +16,7 @@ class rl_cpt_calendar extends WP_Widget {
 
     /** constructor */
     function rl_cpt_calendar() {
-        parent::WP_Widget(false, $name = 'Calendario CPT');	
+        parent::WP_Widget(false, $name = 'Calendario Custom Post Types');	
     }
 
     /** @see WP_Widget::widget */
@@ -159,7 +159,7 @@ function ucc_get_calendar( $post_types = '' , $initial = true , $echo = true ) {
 
   // Quick check. If we have no posts at all, abort!
   if ( !$posts ) {
-    $sql = "SELECT 1 as test FROM $wpdb->posts WHERE post_type IN ( $post_types ) AND post_status = 'publish' LIMIT 1";
+    $sql = "SELECT 1 as test FROM $wpdb->posts WHERE post_type IN ( $post_types ) AND post_status IN ('publish','future') LIMIT 1";
     $gotsome = $wpdb->get_var( $sql );
     if ( !$gotsome ) {
       $cache[$key] = '';
@@ -200,14 +200,14 @@ function ucc_get_calendar( $post_types = '' , $initial = true , $echo = true ) {
   $previous = $wpdb->get_row( "SELECT DISTINCT MONTH( post_date ) AS month , YEAR( post_date ) AS year
     FROM $wpdb->posts
     WHERE post_date < '$thisyear-$thismonth-01'
-    AND post_type IN ( $post_types ) AND post_status = 'publish'
+    AND post_type IN ( $post_types ) AND post_status IN ('publish','future')
       ORDER BY post_date DESC
       LIMIT 1" );
   $next = $wpdb->get_row( "SELECT DISTINCT MONTH( post_date ) AS month, YEAR( post_date ) AS year
     FROM $wpdb->posts
     WHERE post_date > '$thisyear-$thismonth-01'
     AND MONTH( post_date ) != MONTH( '$thisyear-$thismonth-01' )
-    AND post_type IN ( $post_types ) AND post_status = 'publish'
+    AND post_type IN ( $post_types ) AND post_status IN ('publish','future')
       ORDER  BY post_date ASC
       LIMIT 1" );
 
@@ -260,8 +260,8 @@ function ucc_get_calendar( $post_types = '' , $initial = true , $echo = true ) {
   $dayswithposts = $wpdb->get_results( "SELECT DISTINCT DAYOFMONTH( post_date )
     FROM $wpdb->posts WHERE MONTH( post_date ) = '$thismonth'
     AND YEAR( post_date ) = '$thisyear'
-    AND post_type IN ( $post_types ) AND post_status = 'publish'
-    AND post_date < '" . current_time( 'mysql' ) . '\'', ARRAY_N );
+    AND post_type IN ( $post_types ) AND post_status IN ('publish','future')", ARRAY_N );
+  /* AND post_date < '" . current_time( 'mysql' ) . '\''*/
   if ( $dayswithposts ) {
     foreach ( (array) $dayswithposts as $daywith ) {
       $daywithpost[] = $daywith[0];
@@ -280,8 +280,8 @@ function ucc_get_calendar( $post_types = '' , $initial = true , $echo = true ) {
     . "FROM $wpdb->posts "
     . "WHERE YEAR( post_date ) = '$thisyear' "
     . "AND MONTH( post_date ) = '$thismonth' "
-    . "AND post_date < '" . current_time( 'mysql' ) . "' "
-    . "AND post_type IN ( $post_types ) AND post_status = 'publish'"
+    //. "AND post_date < '" . current_time( 'mysql' ) . "' "
+    . "AND post_type IN ( $post_types ) AND post_status IN ('publish','future')"
   );
   if ( $ak_post_titles ) {
     foreach ( (array) $ak_post_titles as $ak_post_title ) {
@@ -341,6 +341,13 @@ function ucc_get_calendar( $post_types = '' , $initial = true , $echo = true ) {
   else
     return $output;
 }
+
+function archive_meta_query( $query ) {
+    if ( $query->is_archive){
+      $query->query_vars["post_status"] = array('publish', 'future');
+    }
+}
+add_action( 'pre_get_posts', 'archive_meta_query', 1 );
 
 function ucc_get_calendar_filter( $content ) {
   $output = ucc_get_calendar( '' , '' , false );
